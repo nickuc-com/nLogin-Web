@@ -10,7 +10,7 @@ https://github.com/AuthMe/AuthMeReloaded/tree/master/samples/website_integration
 3. [Registering an account.](#register)
 4. [Changing the password.](#changePassword)
 
-# <div id="connection">Connection.</div>
+## <div id="connection">Connection.</div>
 
 ```php
 require 'nLogin.php';
@@ -19,7 +19,7 @@ require 'nLogin.php';
 $nlogin = new nLogin("localhost", "root", "", "nlogin");
 ```
 
-# <div id="login">Login.</div>
+## <div id="login">Login.</div>
 
 ```php
 require 'nLogin.php';
@@ -31,7 +31,7 @@ $nlogin = new nLogin("localhost", "root", "", "nlogin");
 $nlogin->checkPassword("zlDeath", "mypassword");
 ```
 
-# <div id="register">Register.</div>
+## <div id="register">Register.</div>
 
 ```php
 require 'nLogin.php';
@@ -43,7 +43,7 @@ $nlogin = new nLogin("localhost", "root", "", "nlogin");
 $nlogin->register("zlDeath", "mypassword", 'youremail@domain.com');
 ```
 
-# <div id="changePassword">Changepassword.</div>
+## <div id="changePassword">Changepassword.</div>
 
 ```php
 require 'nLogin.php';
