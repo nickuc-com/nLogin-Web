@@ -30,47 +30,47 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @var string
 	 */
-    protected static $_saltPrefix = '2a';
+	protected static $_saltPrefix = '2a';
 	 
 	/**
 	 * Default hashing cost (4-31)
 	 * 
 	 * @var integer
 	 */
-    protected static $_defaultCost = 14;
+	protected static $_defaultCost = 14;
  
 	/**
 	 * Salt limit length
 	 * 
 	 * @var integer
 	 */
-    protected static $_saltLength = 22;
+	protected static $_saltLength = 22;
 
-    /**
+	/**
 	 * Hash a string
 	 * 
 	 * @param  string  $string The string
 	 * @param  integer $cost   The hashing cost
 	 * 
-	 * @see    http://www.php.net/manual/en/function.crypt.php
+	 * @see	http://www.php.net/manual/en/function.crypt.php
 	 * 
 	 * @return string
 	 */
-    public function hash($string, $cost = null) {
-        if (empty($cost)) {
-            $cost = self::$_defaultCost;
-        }
+	public function hash($string, $cost = null) {
+		if (empty($cost)) {
+			$cost = self::$_defaultCost;
+		}
  
-        // Salt
-        $salt = $this->generateRandomSalt();
+		// Salt
+		$salt = $this->generateRandomSalt();
  
-        // Hash string
-        $hashString = $this->__generateHashString((int)$cost, $salt);
+		// Hash string
+		$hashString = $this->__generateHashString((int)$cost, $salt);
  
-        return crypt($string, $hashString);
-    }
+		return crypt($string, $hashString);
+	}
 
-    /**
+	/**
 	 * Check a hashed string
 	 * 
 	 * @param  string $string The string
@@ -78,25 +78,25 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @return boolean
 	 */
-    public function isValidPassword($password, $hash) {
-        return (crypt($password, $hash) === $hash);
-    }
+	public function isValidPassword($password, $hash) {
+		return (crypt($password, $hash) === $hash);
+	}
 
-    /**
+	/**
 	 * Generate a random base64 encoded salt
 	 * 
 	 * @return string
 	 */
-    private function generateRandomSalt() {
-        // Salt seed
-        $seed = uniqid(mt_rand(), true);
+	private function generateRandomSalt() {
+		// Salt seed
+		$seed = uniqid(mt_rand(), true);
  
-        // Generate salt
-        $salt = base64_encode($seed);
-        $salt = str_replace('+', '.', $salt);
+		// Generate salt
+		$salt = base64_encode($seed);
+		$salt = str_replace('+', '.', $salt);
  
-        return substr($salt, 0, self::$_saltLength);
-    }
+		return substr($salt, 0, self::$_saltLength);
+	}
  
 	/**
 	 * Build a hash string for crypt()
@@ -106,8 +106,8 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @return string
 	 */
-    private function __generateHashString($cost, $salt) {
-        return sprintf('$%s$%02d$%s$', self::$_saltPrefix, $cost, $salt);
-    }
+	private function __generateHashString($cost, $salt) {
+		return sprintf('$%s$%02d$%s$', self::$_saltPrefix, $cost, $salt);
+	}
 
 }

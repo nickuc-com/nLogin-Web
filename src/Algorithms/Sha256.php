@@ -25,38 +25,38 @@
 
 class Sha256 extends Algorithm {
 
-    private $CHARS = ''; 
-    const SALT_LENGTH = 24;
+	private $CHARS = ''; 
+	const SALT_LENGTH = 24;
 
-    public function __construct() {
-        $this->CHARS = implode('', range('A', 'Z')) . implode('', range(0, 9));
-    }
+	public function __construct() {
+		$this->CHARS = implode('', range('A', 'Z')) . implode('', range(0, 9));
+	}
 
-    public function isValidPassword($password, $hash) {
-        $parts = explode('$', $hash);
-        $saltParts = explode('@', $hash);
-        return count($parts) === 3 && count($saltParts) == 2 && $parts[2] === hash('sha256', hash('sha256', $password) . $saltParts[1]);
-    }
+	public function isValidPassword($password, $hash) {
+		$parts = explode('$', $hash);
+		$saltParts = explode('@', $hash);
+		return count($parts) === 3 && count($saltParts) == 2 && $parts[2] === hash('sha256', hash('sha256', $password) . $saltParts[1]);
+	}
 
-    public function hash($password) {
-        $salt = $this->generateSalt();
-        return '$SHA256$' . hash('sha256', hash('sha256', $password) . $salt) . '@' . $salt;
-    }
+	public function hash($password) {
+		$salt = $this->generateSalt();
+		return '$SHA256$' . hash('sha256', hash('sha256', $password) . $salt) . '@' . $salt;
+	}
 
-    /**
-     * @return string randomly generated salt
-     */
-    private function generateSalt() {
-        $maxCharIndex = count(self::$CHARS) - 1;
-        $salt = '';
-        for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
-            $salt .= self::$CHARS[mt_rand(0, $maxCharIndex)];
-        }
-        return $salt;
-    }
+	/**
+	 * @return string randomly generated salt
+	 */
+	private function generateSalt() {
+		$maxCharIndex = count(self::$CHARS) - 1;
+		$salt = '';
+		for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
+			$salt .= self::$CHARS[mt_rand(0, $maxCharIndex)];
+		}
+		return $salt;
+	}
 
-    private static function initCharRange() {
-        return array_merge(range('0', '9'), range('a', 'f'));
-    }
+	private static function initCharRange() {
+		return array_merge(range('0', '9'), range('a', 'f'));
+	}
 
 }

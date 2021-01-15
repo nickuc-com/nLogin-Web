@@ -25,41 +25,41 @@
 
 class AuthMe extends Algorithm {
 
-    /** @var string[] range of characters for salt generation */
-    private $CHARS;
+	/** @var string[] range of characters for salt generation */
+	private $CHARS;
 
-    const SALT_LENGTH = 16;
+	const SALT_LENGTH = 16;
 
-    public function __construct() {
-        $this->CHARS = self::initCharRange();
-    }
+	public function __construct() {
+		$this->CHARS = self::initCharRange();
+	}
 
-    protected function isValidPassword($password, $hash) {
-        // $SHA$salt$hash, where hash := sha256(sha256(password) . salt)
-        $parts = explode('$', $hash);
-        $count = count($parts);
-        return ($count === 4 || $count === 5) && $parts[3] === hash('sha256', hash('sha256', $password) . $parts[2]);
-    }
+	protected function isValidPassword($password, $hash) {
+		// $SHA$salt$hash, where hash := sha256(sha256(password) . salt)
+		$parts = explode('$', $hash);
+		$count = count($parts);
+		return ($count === 4 || $count === 5) && $parts[3] === hash('sha256', hash('sha256', $password) . $parts[2]);
+	}
 
-    protected function hash($password) {
-        $salt = $this->generateSalt();
-        return '$SHA$' . $salt . '$' . hash('sha256', hash('sha256', $password) . $salt) . '$AUTHME';
-    }
+	protected function hash($password) {
+		$salt = $this->generateSalt();
+		return '$SHA$' . $salt . '$' . hash('sha256', hash('sha256', $password) . $salt) . '$AUTHME';
+	}
 
-    /**
-     * @return string randomly generated salt
-     */
-    private function generateSalt() {
-        $maxCharIndex = count($this->CHARS) - 1;
-        $salt = '';
-        for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
-            $salt .= $this->CHARS[mt_rand(0, $maxCharIndex)];
-        }
-        return $salt;
-    }
+	/**
+	 * @return string randomly generated salt
+	 */
+	private function generateSalt() {
+		$maxCharIndex = count($this->CHARS) - 1;
+		$salt = '';
+		for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
+			$salt .= $this->CHARS[mt_rand(0, $maxCharIndex)];
+		}
+		return $salt;
+	}
 
-    private static function initCharRange() {
-        return array_merge(range('0', '9'), range('a', 'f'));
-    }
+	private static function initCharRange() {
+		return array_merge(range('0', '9'), range('a', 'f'));
+	}
 
 }
