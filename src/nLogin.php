@@ -224,7 +224,7 @@ class nLogin
 	private function getMySqli() {
 		$mysqli = new mysqli($this->db_host, $this->db_user, $this->db_pass, $this->db_name);
 		if (mysqli_connect_error()) {
-			printf('Could not connect to ' . $db_name . ' database. Errno: %d, error: "%s"',
+			printf('Could not connect to ' . $this->db_name . ' database. Errno: %d, error: "%s"',
 				mysqli_connect_errno(), mysqli_connect_error());
 			return null;
 		}
