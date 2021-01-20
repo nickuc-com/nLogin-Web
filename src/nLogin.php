@@ -173,12 +173,10 @@ class nLogin
 	 * Retorna o algoritmo usado na senha.
 	 *
 	 * @param string $hashed_pass Senha criptografada.
-	 * @return string Retorna o algoritmo usado. Se for desconhecido ou não suportado, retorna null.
+	 * @return object Retorna o algoritmo usado. Se for desconhecido ou não suportado, retorna null.
 	 */
 	private function detectAlgorithm($hashed_pass)
 	{
-		$hashed_pass = strtolower($hashed_pass);
-
 		$algo = strtoupper(strpos($hashed_pass, '$') !== false ? explode('$', $hashed_pass)[1] : '');
 		switch ($algo) {
 		 	case '2':
