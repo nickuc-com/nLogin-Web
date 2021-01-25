@@ -76,7 +76,7 @@ class nLogin
 	 * @param string $password the password
 	 * @return bool true if the data is correct, false otherwise
 	 */
-	function checkPassword($username, $password) {
+	public function checkPassword($username, $password) {
 		if (is_scalar($username) && is_scalar($password)) {
 			$hash = $this->getHashedPassword($username);
 			if ($hash) {
@@ -95,7 +95,7 @@ class nLogin
 	 * @param string $username the username to check
 	 * @return bool true if the user exists; false otherwise
 	 */
-	function isUserRegistered($username) {
+	public function isUserRegistered($username) {
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
 			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE name = ?');
