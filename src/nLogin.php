@@ -70,7 +70,7 @@ class nLogin
 	}
 
 	/**
-	 * Entry point function to check supplied credentials against the AuthMe database.
+	 * Entry point function to check supplied credentials against the nLogin database.
 	 *
 	 * @param string $username the username
 	 * @param string $password the password
@@ -98,7 +98,7 @@ class nLogin
 	public function isUserRegistered($username) {
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
-			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE name = ?');
+			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE name = ? LIMIT 1');
 			$stmt->bind_param('s', $username);
 			$stmt->execute();
 			return $stmt->fetch();
@@ -117,7 +117,7 @@ class nLogin
 	{
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
-			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE address = ?');
+			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE address = ? LIMIT 1');
 			$stmt->bind_param('s', $address);
 			$stmt->execute();
 			return $stmt->fetch();
@@ -160,8 +160,7 @@ class nLogin
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
 			$hash = $this->hash($password);
-			$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET password=? '
-				. 'WHERE name=?');
+			$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET password = ? WHERE name = ?');
 			$username_lower = strtolower($username);
 			$stmt->bind_param('ss', $hash, $username_lower);
 			return $stmt->execute();
@@ -238,7 +237,7 @@ class nLogin
 	private function getHashedPassword($username) {
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
-			$stmt = $mysqli->prepare('SELECT password FROM ' . self::TABLE_NAME . ' WHERE name = ?');
+			$stmt = $mysqli->prepare('SELECT password FROM ' . self::TABLE_NAME . ' WHERE name = ? LIMIT 1');
 			$stmt->bind_param('s', $username);
 			$stmt->execute();
 			$stmt->bind_result($password);
