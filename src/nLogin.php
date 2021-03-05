@@ -133,19 +133,30 @@ class nLogin
 	 * @param string $username the username to register
 	 * @param string $password the password to associate to the user
 	 * @param string $email the email (may be empty)
+	 * @param string $address the address (optional)
 	 * @return bool whether or not the registration was successful
 	 */
-	public function register($username, $password, $email) {
+	public function register($username, $password, $email, $address = null) {
+		if ($address == null) {
+			$address = $_SERVER['REMOTE_ADDR'];
+		}
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
 			$username = trim($username);
 			$email = $email ? $email : '';
 			$hash = $this->hash($password);
-			$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (name, realname, password, address, email) '
-				. 'VALUES (?, ?, ?, ?, ?) '
-				. 'ON DUPLICATE KEY UPDATE name = ?, realname = ?, password = ?, email = ?');
 			$username_lower = strtolower($username);
-			$stmt->bind_param('sssssssss', $username_lower, $username, $hash, $_SERVER['REMOTE_ADDR'], $email, $username_lower, $username, $hash, $email);
+			if ($this->isUserRegistered($username)) {
+				$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET ' 
+					. 'password = ?, address = ?, email = ? WHERE name = ?');
+				$stmt->bind_param('ssss', $hash, $address, $email, $username_lower);
+			}
+			else
+			{
+				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (name, realname, password, address, email) '
+					. 'VALUES (?, ?, ?, ?, ?) ');
+				$stmt->bind_param('sssss', $username_lower, $username, $hash, $address, $email);
+			}
 			return $stmt->execute();
 		}
 		return false;
