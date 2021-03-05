@@ -98,6 +98,7 @@ class nLogin
 	public function isUserRegistered($username) {
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
+			$username = trim($username);
 			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE name = ? LIMIT 1');
 			$stmt->bind_param('s', $username);
 			$stmt->execute();
@@ -137,6 +138,7 @@ class nLogin
 	public function register($username, $password, $email) {
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
+			$username = trim($username);
 			$email = $email ? $email : '';
 			$hash = $this->hash($password);
 			$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (name, realname, password, address, email) '
@@ -159,6 +161,7 @@ class nLogin
 	public function changePassword($username, $password) {
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
+			$username = trim($username);
 			$hash = $this->hash($password);
 			$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET password = ? WHERE name = ?');
 			$username_lower = strtolower($username);
@@ -237,6 +240,7 @@ class nLogin
 	private function getHashedPassword($username) {
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
+			$username = trim($username);
 			$stmt = $mysqli->prepare('SELECT password FROM ' . self::TABLE_NAME . ' WHERE name = ? LIMIT 1');
 			$stmt->bind_param('s', $username);
 			$stmt->execute();
