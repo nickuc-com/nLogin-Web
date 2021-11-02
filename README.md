@@ -57,4 +57,4 @@ $nlogin->changePassword("zlDeath", "newpassword");
 
 ## <div id="nodejs">Node.js</div>
 
-If you use Node.js, take a look at the work done by tiagodinis33: https://github.com/tiagodinis33/nlogin-js
+If you use Node.js, take a look at the work done by tiagodinis33: https://gitlab.com/tiagodinis33/nlogin-js
