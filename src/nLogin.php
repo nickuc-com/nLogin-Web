@@ -206,13 +206,11 @@ class nLogin
 			
 			case "SHA256":
 			   return $this->SHA256;
+
+			case "SHA":
+				return $this->AUTHME;
 		 	
-			default:		
-		 		$needle = '$AUTHME';
-				$length = strlen($needle);
-				if ($length && substr($hashed_pass, -$length) === $needle) {
-					return $this->AUTHME;
-				}
+			default:
 		 		return null;
 		 } 
 	}

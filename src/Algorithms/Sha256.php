@@ -34,13 +34,24 @@ class Sha256 extends Algorithm {
 
 	public function isValidPassword($password, $hash) {
 		$parts = explode('$', $hash);
-		$saltParts = explode('@', $hash);
-		return count($parts) === 3 && count($saltParts) == 2 && $parts[2] === hash('sha256', hash('sha256', $password) . $saltParts[1]);
+		$partsLength = count($parts);
+		switch ($partsLength) {
+			case 3:
+				$saltParts = explode('@', $hash);
+				$salt = $saltParts[1];
+				return $parts[2] . '@' . $salt === hash('sha256', hash('sha256', $password) . $salt);
+
+			case 4:
+				return $parts[2] === hash('sha256', hash('sha256', $password) . $parts[3]);
+			
+			default:
+				throw new Exception("invalid hash parts length! length=" . $partsLength . ', raw="' . $hash . '"');
+		}
 	}
 
 	public function hash($password) {
 		$salt = $this->generateSalt();
-		return '$SHA256$' . hash('sha256', hash('sha256', $password) . $salt) . '@' . $salt;
+		return '$SHA256$' . hash('sha256', hash('sha256', $password) . $salt) . '$' . $salt;
 	}
 
 	/**
