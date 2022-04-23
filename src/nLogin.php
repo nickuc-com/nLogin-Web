@@ -26,6 +26,7 @@
 require 'Algorithms/Algorithm.php';
 require 'Algorithms/Bcrypt.php';
 require 'Algorithms/Sha256.php';
+require 'Algorithms/Sha512.php';
 require 'Algorithms/AuthMe.php';
 
 class nLogin
@@ -35,6 +36,7 @@ class nLogin
 
 	private $BCRYPT;
 	private $SHA256;
+	private $SHA512;
 	private $AUTHME;
 	private $DEF_ALGO;
 
@@ -52,6 +54,7 @@ class nLogin
 	{
 		$this->BCRYPT = new Bcrypt();
 		$this->SHA256 = new Sha256();
+		$this->SHA512 = new Sha512();
 		$this->AUTHME = new AuthMe();
 		$this->DEF_ALGO = $this->BCRYPT;
 
@@ -206,6 +209,9 @@ class nLogin
 			
 			case "SHA256":
 			   return $this->SHA256;
+			   
+			case "SHA512":
+			   return $this->SHA512;
 
 			case "SHA":
 				return $this->AUTHME;

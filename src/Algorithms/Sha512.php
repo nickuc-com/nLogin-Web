@@ -1,0 +1,73 @@
+<?php
+/*
+ * This code or part of it was taken from the AuthMe project,
+ * licensed under the GNU General Public License v3.0 (https://github.com/AuthMe/AuthMeReloaded/blob/master/LICENSE)
+ * 
+ * For more details, access the original source code:
+ * https://github.com/AuthMe/AuthMeReloaded/tree/master/samples/website_integration 
+ */
+
+/*
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+class Sha512 extends Algorithm {
+
+	private $CHARS = ''; 
+	const SALT_LENGTH = 24;
+
+	public function __construct() {
+		$this->CHARS = implode('', range('A', 'Z')) . implode('', range(0, 9));
+	}
+
+	public function isValidPassword($password, $hash) {
+		$parts = explode('$', $hash);
+		$partsLength = count($parts);
+		switch ($partsLength) {
+			case 3:
+				$saltParts = explode('@', $hash);
+				$salt = $saltParts[1];
+				return $parts[2] . '@' . $salt === hash('sha512', hash('sha512', $password) . $salt);
+
+			case 4:
+				return $parts[2] === hash('sha512', hash('sha512', $password) . $parts[3]);
+			
+			default:
+				throw new Exception("invalid hash parts length! length=" . $partsLength . ', raw="' . $hash . '"');
+		}
+	}
+
+	public function hash($password) {
+		$salt = $this->generateSalt();
+		return '$SHA512$' . hash('sha512', hash('sha512', $password) . $salt) . '$' . $salt;
+	}
+
+	/**
+	 * @return string randomly generated salt
+	 */
+	private function generateSalt() {
+		$maxCharIndex = count(self::$CHARS) - 1;
+		$salt = '';
+		for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
+			$salt .= self::$CHARS[mt_rand(0, $maxCharIndex)];
+		}
+		return $salt;
+	}
+
+	private static function initCharRange() {
+		return array_merge(range('0', '9'), range('a', 'f'));
+	}
+
+}
