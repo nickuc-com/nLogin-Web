@@ -84,9 +84,10 @@ class nLogin
 			$hash = $this->getHashedPassword($username);
 			if ($hash) {
 				$algorithm = $this->detectAlgorithm($hash);
-				if ($algorithm) {
-					return $algorithm->isValidPassword($password, $hash);
+				if ($algorithm == null) {
+					throw new \Exception('Algorithm cannot be determined for ' . $user . '\'s password!');
 				}
+				return $algorithm->isValidPassword($password, $hash);
 			}
 		}
 		return false;
@@ -198,14 +199,6 @@ class nLogin
 		 	case '2':
 		 	case '2A':
 		 		return $this->BCRYPT;
-
-		 	case "PBKDF2":
-				// will be added
-				return null;
-			
-			case "ARGON2I":
-				// will be added
-				return null;
 			
 			case "SHA256":
 			   return $this->SHA256;
@@ -215,6 +208,10 @@ class nLogin
 
 			case "SHA":
 				return $this->AUTHME;
+
+			case "PBKDF2":
+			case "ARGON2I":
+				throw new \Exception('Algorithm "'. $algo . '" not supported yet!');
 		 	
 			default:
 		 		return null;
