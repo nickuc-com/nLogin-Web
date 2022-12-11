@@ -157,7 +157,7 @@ class nLogin
 			}
 			else
 			{
-				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (name, realname, password, address, email) '
+				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (name, real_name, password, address, email) '
 					. 'VALUES (?, ?, ?, ?, ?) ');
 				$stmt->bind_param('sssss', $username_lower, $username, $hash, $address, $email);
 			}
