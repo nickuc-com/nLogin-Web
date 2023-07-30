@@ -103,7 +103,7 @@ class nLogin
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
 			$username = trim($username);
-			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE name = ? LIMIT 1');
+			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE last_name = ? LIMIT 1');
 			$stmt->bind_param('s', $username);
 			$stmt->execute();
 			return $stmt->fetch();
@@ -122,7 +122,7 @@ class nLogin
 	{
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
-			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE address = ? LIMIT 1');
+			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE last_address = ? LIMIT 1');
 			$stmt->bind_param('s', $address);
 			$stmt->execute();
 			return $stmt->fetch();
@@ -148,18 +148,17 @@ class nLogin
 		if ($mysqli !== null) {
 			$username = trim($username);
 			$email = $email ? $email : '';
-			$hash = $this->hash($password);
-			$username_lower = strtolower($username);
+			$hashed_password = $this->hash($password);
 			if ($this->isUserRegistered($username)) {
 				$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET ' 
-					. 'password = ?, address = ?, email = ? WHERE name = ?');
-				$stmt->bind_param('ssss', $hash, $address, $email, $username_lower);
+					. 'password = ?, last_address = ?, email = ? WHERE last_name = ?');
+				$stmt->bind_param('ssss', $hashed_password, $address, $email, $username);
 			}
 			else
 			{
-				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (name, real_name, password, address, email) '
-					. 'VALUES (?, ?, ?, ?, ?) ');
-				$stmt->bind_param('sssss', $username_lower, $username, $hash, $address, $email);
+				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (last_name, password, last_address, email) '
+					. 'VALUES (?, ?, ?, ?) ');
+				$stmt->bind_param('ssss', $username, $hashed_password, $address, $email);
 			}
 			return $stmt->execute();
 		}
@@ -178,9 +177,8 @@ class nLogin
 		if ($mysqli !== null) {
 			$username = trim($username);
 			$hash = $this->hash($password);
-			$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET password = ? WHERE name = ?');
-			$username_lower = strtolower($username);
-			$stmt->bind_param('ss', $hash, $username_lower);
+			$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET password = ? WHERE last_name = ?');
+			$stmt->bind_param('ss', $hash, $username);
 			return $stmt->execute();
 		}
 		return false;
@@ -253,7 +251,7 @@ class nLogin
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
 			$username = trim($username);
-			$stmt = $mysqli->prepare('SELECT password FROM ' . self::TABLE_NAME . ' WHERE name = ? LIMIT 1');
+			$stmt = $mysqli->prepare('SELECT password FROM ' . self::TABLE_NAME . ' WHERE last_name = ? LIMIT 1');
 			$stmt->bind_param('s', $username);
 			$stmt->execute();
 			$stmt->bind_result($password);
