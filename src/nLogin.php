@@ -122,7 +122,7 @@ class nLogin
 	{
 		$mysqli = $this->getMySqli();
 		if ($mysqli !== null) {
-			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE last_address = ? LIMIT 1');
+			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE last_ip = ? LIMIT 1');
 			$stmt->bind_param('s', $address);
 			$stmt->execute();
 			return $stmt->fetch();
@@ -151,12 +151,12 @@ class nLogin
 			$hashed_password = $this->hash($password);
 			if ($this->isUserRegistered($username)) {
 				$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET ' 
-					. 'password = ?, last_address = ?, email = ? WHERE last_name = ?');
+					. 'password = ?, last_ip = ?, email = ? WHERE last_name = ?');
 				$stmt->bind_param('ssss', $hashed_password, $address, $email, $username);
 			}
 			else
 			{
-				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (last_name, password, last_address, email) '
+				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (last_name, password, last_ip, email) '
 					. 'VALUES (?, ?, ?, ?) ');
 				$stmt->bind_param('ssss', $username, $hashed_password, $address, $email);
 			}
