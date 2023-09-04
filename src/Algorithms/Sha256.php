@@ -25,7 +25,7 @@
 
 class Sha256 extends Algorithm {
 
-	private $CHARS = ''; 
+	private $CHARS; 
 	const SALT_LENGTH = 24;
 
 	public function __construct() {
@@ -58,16 +58,12 @@ class Sha256 extends Algorithm {
 	 * @return string randomly generated salt
 	 */
 	private function generateSalt() {
-		$maxCharIndex = count(self::$CHARS) - 1;
+		$maxCharIndex = strlen($this->CHARS) - 1;
 		$salt = '';
 		for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
-			$salt .= self::$CHARS[mt_rand(0, $maxCharIndex)];
+			$salt .= $this->CHARS[mt_rand(0, $maxCharIndex)];
 		}
 		return $salt;
-	}
-
-	private static function initCharRange() {
-		return array_merge(range('0', '9'), range('a', 'f'));
 	}
 
 }
