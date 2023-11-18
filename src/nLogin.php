@@ -69,7 +69,6 @@ class nLogin
 	 */
 	public function __destruct()
 	{
-		$this->connection = null;
 	}
 
 	/**
@@ -85,7 +84,7 @@ class nLogin
 			if ($hash) {
 				$algorithm = $this->detectAlgorithm($hash);
 				if ($algorithm == null) {
-					throw new \Exception('Algorithm cannot be determined for ' . $user . '\'s password!');
+					throw new \Exception('Algorithm cannot be determined for ' . $username . '\'s password!');
 				}
 				return $algorithm->isValidPassword($password, $hash);
 			}
@@ -185,10 +184,10 @@ class nLogin
 	}
 
 	/**
-	 * Retorna o algoritmo usado na senha.
+	 * Returns the algorithm used in the password.
 	 *
-	 * @param string $hashed_pass Senha criptografada.
-	 * @return object Retorna o algoritmo usado. Se for desconhecido ou não suportado, retorna null.
+	 * @param string $hashed_pass Hashed password.
+	 * @return object|null Returns the algorithm used. If unknown or unsupported, returns null.
 	 */
 	private function detectAlgorithm($hashed_pass)
 	{
