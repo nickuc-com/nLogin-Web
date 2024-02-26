@@ -25,33 +25,39 @@
 
 class Sha512 extends Algorithm {
 
+	public static $INSTANCE = new Sha512();
+
+	/**
+	 * salt length
+	 */
+	protected static $SALT_LENGTH = 24;
+
 	private $CHARS; 
-	const SALT_LENGTH = 24;
 
 	public function __construct() {
 		$this->CHARS = implode('', range('A', 'Z')) . implode('', range(0, 9));
 	}
 
-	public function isValidPassword($password, $hash) {
+	public function hash(string $password) {
+		$salt = $this->generateSalt();
+		return '$SHA512$' . hash('sha512', hash('sha512', $password) . $salt) . '$' . $salt;
+	}
+
+	public function verify(string $password, string $hash) {
 		$parts = explode('$', $hash);
 		$partsLength = count($parts);
 		switch ($partsLength) {
-			case 3:
+			case 3: // old format
 				$saltParts = explode('@', $hash);
 				$salt = $saltParts[1];
 				return $parts[2] . '@' . $salt === hash('sha512', hash('sha512', $password) . $salt);
 
-			case 4:
+			case 4: // new format
 				return $parts[2] === hash('sha512', hash('sha512', $password) . $parts[3]);
 			
 			default:
 				throw new Exception("invalid hash parts length! length=" . $partsLength . ', raw="' . $hash . '"');
 		}
-	}
-
-	public function hash($password) {
-		$salt = $this->generateSalt();
-		return '$SHA512$' . hash('sha512', hash('sha512', $password) . $salt) . '$' . $salt;
 	}
 
 	/**
@@ -60,7 +66,7 @@ class Sha512 extends Algorithm {
 	private function generateSalt() {
 		$maxCharIndex = strlen($this->CHARS) - 1;
 		$salt = '';
-		for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
+		for ($i = 0; $i < self::$SALT_LENGTH; ++$i) {
 			$salt .= $this->CHARS[mt_rand(0, $maxCharIndex)];
 		}
 		return $salt;

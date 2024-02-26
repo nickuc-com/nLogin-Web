@@ -24,110 +24,164 @@
  */
 
 require 'Algorithms/Algorithm.php';
+require 'Algorithms/AuthMe.php';
 require 'Algorithms/Bcrypt.php';
 require 'Algorithms/Sha256.php';
 require 'Algorithms/Sha512.php';
-require 'Algorithms/AuthMe.php';
 
 class nLogin
 {
 
-	const TABLE_NAME = 'nlogin';
+	public static int $FETCH_WITH_MOJANG_ID = 1;
+	public static int $FETCH_WITH_BEDROCK_ID = 2;
+	public static int $FETCH_WITH_LAST_NAME = 3;
+	
+	public static string $TABLE_NAME = 'nlogin';
+	public static $HASHING_ALGORITHM = Bcrypt::$INSTANCE;
 
-	private $BCRYPT;
-	private $SHA256;
-	private $SHA512;
-	private $AUTHME;
-	private $DEF_ALGO;
-
-	private $db_host, $db_user, $db_pass, $db_name;
+	private string $mysql_host, $mysql_user, $mysql_pass, $mysql_database;
+	private bool $using_username_appender;
 
 	/**
 	 * Constructor responsible for creating the connection with the database
 	 *
-	 * @param string $db_host MySQL Host
-	 * @param string $db_user MySQL User
-	 * @param string $db_pass MySQL Password
-	 * @param string $db_name MySQL Database Name 
+	 * @param string $mysql_host MySQL Host
+	 * @param string $mysql_user MySQL User
+	 * @param string $mysql_pass MySQL Password
+	 * @param string $mysql_database MySQL Database Name 
+	 * @param bool $using_username_appender Set this true if the "username-appender" option is enabled in nLogin's config.yml
 	 */
-	public function __construct($db_host, $db_user, $db_pass, $db_name)
+	public function __construct(string $mysql_host, string $mysql_user, string $mysql_pass, string $mysql_database, bool $using_username_appender)
 	{
-		$this->BCRYPT = new Bcrypt();
-		$this->SHA256 = new Sha256();
-		$this->SHA512 = new Sha512();
-		$this->AUTHME = new AuthMe();
-		$this->DEF_ALGO = $this->BCRYPT;
-
-		$this->db_host = $db_host;
-		$this->db_user = $db_user;
-		$this->db_pass = $db_pass;
-		$this->db_name = $db_name;
+		$this-$mysql_host = $mysql_host;
+		$this->mysql_user = $mysql_user;
+		$this->mysql_pass = $mysql_pass;
+		$this->mysql_database = $mysql_database;
+		$this->using_username_appender = $using_username_appender;
 	}
 
 	/**
 	 * Destroys the class instance
 	 */
-	public function __destruct()
+	public function __destruct() 
 	{
 	}
 
 	/**
-	 * Entry point function to check supplied credentials against the nLogin database.
-	 *
-	 * @param string $username the username
-	 * @param string $password the password
-	 * @return bool true if the data is correct, false otherwise
+	 * Retrieves the user identifier for the player.
+	 * 
+	 * @param string $search the value used to search, it can be a username (nLogin::$FETCH_WITH_LAST_NAME), a mojang id (nLogin::$FETCH_WITH_MOJANG_ID) or a bedrock id (nLogin::$FETCH_WITH_BEDROCK_ID)
+	 * @param string $mode the mode used to search
+	 * 
+	 * @return int|null the user identifier, -1 if not found, or null if failed
 	 */
-	public function checkPassword($username, $password) {
-		if (is_scalar($username) && is_scalar($password)) {
-			$hash = $this->getHashedPassword($username);
-			if ($hash) {
-				$algorithm = $this->detectAlgorithm($hash);
-				if ($algorithm == null) {
-					throw new \Exception('Algorithm cannot be determined for ' . $username . '\'s password!');
-				}
-				return $algorithm->isValidPassword($password, $hash);
-			}
+	public function fetch_user_id(string $search, int $mode) {
+		$mysqli = $this->get_mysqli();
+		if ($mysqli == null) {
+			return null;
 		}
-		return false;
+
+		$search = trim($search);
+
+		switch ($mode) {
+			case self::$FETCH_WITH_MOJANG_ID:
+				$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE mojang_id = ? LIMIT 1');
+				$stmt->bind_param('s', $search);
+				break;
+
+			case self::$FETCH_WITH_BEDROCK_ID:
+				$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE bedrock_id = ? LIMIT 1');
+				$stmt->bind_param('s', $search);
+				break;
+
+			case self::$FETCH_WITH_LAST_NAME:
+				if ($this->using_username_appender) {
+					$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE last_name = ? AND mojang_id IS NULL AND bedrock_id IS NULL LIMIT 1');
+					$stmt->bind_param('s', $search);
+				}
+				else {
+					$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE last_name = ? ORDER BY mojang_id DESC LIMIT 1');
+					$stmt->bind_param('s', $search);
+				}
+				break;
+			
+			default:
+				throw new \Exception('Invalid search mode (' . $mode . '), valid values: nLogin::$FETCH_WITH_MOJANG_ID, nLogin::$FETCH_WITH_BEDROCK_ID or nLogin::$FETCH_WITH_LAST_NAME');
+		}
+
+		$stmt->execute();
+		$stmt->bind_result($user_id);
+
+		if (!$stmt->fetch()) {
+			return null;
+		}
+
+		return $user_id ?? -1;
 	}
 
 	/**
 	 * Returns whether the user exists in the database or not.
 	 *
-	 * @param string $username the username to check
+	 * @param int $user_id the user identifier
+	 * 
 	 * @return bool true if the user exists; false otherwise
 	 */
-	public function isUserRegistered($username) {
-		$mysqli = $this->getMySqli();
-		if ($mysqli !== null) {
-			$username = trim($username);
-			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE last_name = ? LIMIT 1');
-			$stmt->bind_param('s', $username);
-			$stmt->execute();
-			return $stmt->fetch();
-		}
-
-		return true;
+	public function is_user_registered(int $user_id) {
+		return $this->__exists_in_database('ai', $user_id);
 	}
 
 	/**
-	 * Returns whether the address exists in the database or not.
+	 * Returns whether the ip exists in the database or not.
 	 *
-	 * @param string $address the username to check
-	 * @return bool true if the address exists; false otherwise
+	 * @param string $ip the username to check
+	 * 
+	 * @return bool true if the ip exists; false otherwise
 	 */
-	public function isIpRegistered($address)
-	{
-		$mysqli = $this->getMySqli();
-		if ($mysqli !== null) {
-			$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::TABLE_NAME . ' WHERE last_ip = ? LIMIT 1');
-			$stmt->bind_param('s', $address);
-			$stmt->execute();
-			return $stmt->fetch();
+	public function is_ip_registered(string $ip) {
+		return $this->__exists_in_database('last_ip', $ip);
+	}
+
+	/**
+	 * Entry point function to check supplied credentials against the nLogin database.
+	 *
+	 * @param int $user_id the user identifier
+	 * @param string $password the plain password
+	 * 
+	 * @return bool true if the data is correct, false otherwise
+	 */
+	public function verify_password(int $user_id, string $password) {
+		$hashed_password = $this->get_hashed_password($user_id);
+		if (!$hashed_password) {
+			return false;
 		}
 
-		return true;
+		$algorithm = $this->detect_algorithm($hashed_password);
+		if ($algorithm == null) {
+			throw new \Exception('Hashing algorithm cannot be determined for user identifier: ' . $user_id);
+		}
+
+		return $algorithm->verify($password, $hashed_password);
+	}
+
+	/**
+	 * Changes password for player.
+	 *
+	 * @param int $user_id the user identifier
+	 * @param string $password the new plain password
+	 * 
+	 * @return bool true whether or not password change was successful 
+	 */
+	public function change_password(int $user_id, string $password) {
+		$mysqli = $this->get_mysqli();
+		if ($mysqli == null) {
+			return false;
+		}
+
+		$hash = self::$HASHING_ALGORITHM->hash($password);
+		$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET password = ? WHERE ai = ? LIMIT 1');
+		$stmt->bind_param('si', $hash, $user_id);
+		
+		return $stmt->execute();
 	}
 
 	/**
@@ -136,93 +190,175 @@ class nLogin
 	 * @param string $username the username to register
 	 * @param string $password the password to associate to the user
 	 * @param string $email the email (may be empty)
-	 * @param string $address the address (optional)
+	 * @param string $ip the ip (optional)
+	 * @param string $mojang_id the mojang id (optional). It should be null if $bedrock_id is not null
+	 * @param string $bedrock_id the bedrock id (optional). It should be null if $mojang_id is not null 
+	 * 
 	 * @return bool whether or not the registration was successful
 	 */
-	public function register($username, $password, $email, $address = null) {
-		if ($address == null) {
-			$address = $_SERVER['REMOTE_ADDR'];
+	public function register(string $username, string $password, string $email, string $ip = null, string $mojang_id = null, string $bedrock_id = null) {
+		if ($ip == null) {
+			$ip = $_SERVER['REMOTE_ADDR'];
 		}
-		$mysqli = $this->getMySqli();
-		if ($mysqli !== null) {
-			$username = trim($username);
-			$email = $email ? $email : '';
-			$hashed_password = $this->hash($password);
-			if ($this->isUserRegistered($username)) {
-				$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET ' 
-					. 'password = ?, last_ip = ?, email = ? WHERE last_name = ?');
-				$stmt->bind_param('ssss', $hashed_password, $address, $email, $username);
-			}
-			else
-			{
-				$stmt = $mysqli->prepare('INSERT INTO ' . self::TABLE_NAME . ' (last_name, password, last_ip, email) '
-					. 'VALUES (?, ?, ?, ?) ');
-				$stmt->bind_param('ssss', $username, $hashed_password, $address, $email);
-			}
-			return $stmt->execute();
+
+		$mysqli = $this->get_mysqli();
+		if ($mysqli == null) {
+			return false;
 		}
-		return false;
+
+		if ($mojang_id != null && $bedrock_id != null) {
+			throw new \Exception('$mojang_id and $bedrock_id cannot be both not null!');
+		}
+
+		$username = trim($username);
+
+		if ($mojang_id != null) {
+			$search = $mojang_id;
+			$mode = self::$FETCH_WITH_MOJANG_ID;
+		}
+		else if ($bedrock_id != null) {
+			$search = $bedrock_id;
+			$mode = self::$FETCH_WITH_BEDROCK_ID;
+		} 
+		else {
+			$search = $username;
+			$mode = self::$FETCH_WITH_LAST_NAME;
+		}
+
+		$user_id = $this->fetch_user_id($search, $mode);
+		if ($user_id == null) {
+			return false;
+		}
+
+		$email = $email ?? '';
+		$hashed_password = self::$HASHING_ALGORITHM->hash($password);
+
+		if ($user_id < 0) {
+			$stmt = $mysqli->prepare('INSERT INTO ' . self::$TABLE_NAME . ' (last_name, password, last_ip, mojang_id, bedrock_id, email) '
+				. 'VALUES (?, ?, ?, ?) ');
+			$stmt->bind_param('ssss', $username, $hashed_password, $ip, $mojang_id, $bedrock_id, $email);
+		} 
+		else if ($mojang_id != null) {
+			$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET ' 
+				. 'password = ?, last_ip = ?, mojang_id = ?, email = ? WHERE ai = ? LIMIT 1');
+			$stmt->bind_param('ssssi', $hashed_password, $ip, $mojang_id, $email, $user_id);
+		} 
+		else if ($bedrock_id != null) {
+			$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET ' 
+				. 'password = ?, last_ip = ?, bedrock_id = ?, email = ? WHERE ai = ? LIMIT 1');
+			$stmt->bind_param('ssssi', $hashed_password, $ip, $bedrock_id, $email, $user_id);
+		} 
+		else {
+			$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET ' 
+				. 'password = ?, last_ip = ?, email = ? WHERE ai = ? LIMIT 1');
+			$stmt->bind_param('sssi', $hashed_password, $ip, $email, $user_id);
+		}
+
+		return $stmt->execute();
 	}
 
 	/**
-	 * Changes password for player.
+	 * Retrieves the hash associated with the given user from the database.
 	 *
-	 * @param string $username the username
-	 * @param string $password the password
-	 * @return bool true whether or not password change was successful 
+	 * @param int $user_id the user identifier
+	 * 
+	 * @return string|null the hash, or null if unavailable (e.g. user identifier doesn't exist)
 	 */
-	public function changePassword($username, $password) {
-		$mysqli = $this->getMySqli();
-		if ($mysqli !== null) {
-			$username = trim($username);
-			$hash = $this->hash($password);
-			$stmt = $mysqli->prepare('UPDATE ' . self::TABLE_NAME . ' SET password = ? WHERE last_name = ?');
-			$stmt->bind_param('ss', $hash, $username);
-			return $stmt->execute();
+	public function get_hashed_password(int $user_id) {
+		$mysqli = $this->get_mysqli();
+		if ($mysqli == null) {
+			return null;
 		}
-		return false;
+
+		$stmt = $mysqli->prepare('SELECT password FROM ' . self::$TABLE_NAME . ' WHERE ai = ? LIMIT 1');
+		
+		$stmt->bind_param('i', $user_id);
+		$stmt->execute();
+		$stmt->bind_result($hashed_password);
+
+		if (!$stmt->fetch()) {
+			return null;
+		}
+
+		return $hashed_password;
 	}
 
 	/**
 	 * Returns the algorithm used in the password.
 	 *
-	 * @param string $hashed_pass Hashed password.
-	 * @return object|null Returns the algorithm used. If unknown or unsupported, returns null.
+	 * @param string $hashed_pass the hashed password.
+	 * 
+	 * @return object|null the algorithm used, or null if unknown or unsupported
 	 */
-	private function detectAlgorithm($hashed_pass)
+	private function detect_algorithm(string $hashed_pass)
 	{
 		$algo = strtoupper(strpos($hashed_pass, '$') !== false ? explode('$', $hashed_pass)[1] : '');
 		switch ($algo) {
 		 	case '2':
 		 	case '2A':
-		 		return $this->BCRYPT;
+		 		return Bcrypt::$INSTANCE;
 			
 			case "SHA256":
-			   return $this->SHA256;
+			   return Sha256::$INSTANCE;
 			   
 			case "SHA512":
-			   return $this->SHA512;
+			   return Sha512::$INSTANCE;
 
 			case "SHA":
-				return $this->AUTHME;
+				return AuthMe::$INSTANCE;
 
-			case "PBKDF2":
-			case "ARGON2I":
-				throw new \Exception('Algorithm "'. $algo . '" not supported yet!');
-		 	
 			default:
 		 		return null;
 		 } 
 	}
 
 	/**
-	 * Hashes the given password.
+	 * Returns whether the row exists with a specific value exists in the database or not.
 	 *
-	 * @param $password string the clear-text password to hash
-	 * @return string the resulting hash
+	 * @param string $column the column name
+	 * @param string $value the username to check
+	 * 
+	 * @return bool true if the row exists; false otherwise
 	 */
-	private function hash($password) {
-		return $this->DEF_ALGO->hash($password);
+	private function __exists_in_database(string $column, string $value) {
+		$mysqli = $this->get_mysqli();
+		if ($mysqli == null) {
+			return true;
+		}
+
+		$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::$TABLE_NAME . ' WHERE ' . $column . ' = ? LIMIT 1');
+	
+		$stmt->bind_param('s', $value);
+		$stmt->execute();
+
+		return $stmt->fetch();
+	}
+
+	/**
+	 * Retrieves the user identifier for the player.
+	 * 
+	 * @param string $column the column name
+	 * @param string $value the column value
+	 * 
+	 * @return int|null the user identifier, or null if unavailable (e.g. targeted user doesn't exist)
+	 */
+	private function __fetch_user_id(string $clauses, string $value) {
+		$mysqli = $this->get_mysqli();
+		if ($mysqli == null) {
+			return null;
+		}
+
+		$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE ' . $column . ' = ?');
+		
+		$stmt->bind_param('s', $value);
+		$stmt->execute();
+		$stmt->bind_result($user_id);
+
+		if (!$stmt->fetch()) {
+			return null;
+		}
+
+		return $user_id;
 	}
 
 	/**
@@ -230,34 +366,13 @@ class nLogin
 	 *
 	 * @return mysqli|null the mysqli object or null upon error
 	 */
-	private function getMySqli() {
-		$mysqli = new mysqli($this->db_host, $this->db_user, $this->db_pass, $this->db_name);
+	private function get_mysqli() {
+		$mysqli = new mysqli($this-mysql, $this->mysql_user, $this->mysql_pass, $this->mysql_database);
 		if (mysqli_connect_error()) {
-			printf('Could not connect to ' . $this->db_name . ' database. Errno: %d, error: "%s"',
+			printf('Could not connect to ' . $this->mysql_database . ' database. Errno: %d, error: "%s"',
 				mysqli_connect_errno(), mysqli_connect_error());
 			return null;
 		}
 		return $mysqli;
-	}
-
-	/**
-	 * Retrieves the hash associated with the given user from the database.
-	 *
-	 * @param string $username the username whose hash should be retrieved
-	 * @return string|null the hash, or null if unavailable (e.g. username doesn't exist)
-	 */
-	private function getHashedPassword($username) {
-		$mysqli = $this->getMySqli();
-		if ($mysqli !== null) {
-			$username = trim($username);
-			$stmt = $mysqli->prepare('SELECT password FROM ' . self::TABLE_NAME . ' WHERE last_name = ? LIMIT 1');
-			$stmt->bind_param('s', $username);
-			$stmt->execute();
-			$stmt->bind_result($password);
-			if ($stmt->fetch()) {
-				return $password;
-			}
-		}
-		return null;
 	}
 }

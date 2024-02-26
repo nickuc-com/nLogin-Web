@@ -25,25 +25,32 @@
 
 class AuthMe extends Algorithm {
 
-	/** @var string[] range of characters for salt generation */
-	private $CHARS;
+	public static $INSTANCE = new AuthMe();
 
-	const SALT_LENGTH = 16;
+	/**
+	 * salt length
+	 */
+	protected static $SALT_LENGTH = 16;
+
+	/**
+	 * @var string[] range of characters for salt generation
+	 */
+	private $CHARS;
 
 	public function __construct() {
 		$this->CHARS = self::initCharRange();
 	}
 
-	protected function isValidPassword($password, $hash) {
+	public function hash(string $password) {
+		$salt = $this->generateSalt();
+		return '$SHA$' . $salt . '$' . hash('sha256', hash('sha256', $password) . $salt) . '$AUTHME';
+	}
+
+	public function verify(string $password, string $hash) {
 		// $SHA$salt$hash, where hash := sha256(sha256(password) . salt)
 		$parts = explode('$', $hash);
 		$count = count($parts);
 		return ($count === 4 || $count === 5) && $parts[3] === hash('sha256', hash('sha256', $password) . $parts[2]);
-	}
-
-	protected function hash($password) {
-		$salt = $this->generateSalt();
-		return '$SHA$' . $salt . '$' . hash('sha256', hash('sha256', $password) . $salt) . '$AUTHME';
 	}
 
 	/**
@@ -52,7 +59,7 @@ class AuthMe extends Algorithm {
 	private function generateSalt() {
 		$maxCharIndex = count($this->CHARS) - 1;
 		$salt = '';
-		for ($i = 0; $i < self::SALT_LENGTH; ++$i) {
+		for ($i = 0; $i < self::$SALT_LENGTH; ++$i) {
 			$salt .= $this->CHARS[mt_rand(0, $maxCharIndex)];
 		}
 		return $salt;

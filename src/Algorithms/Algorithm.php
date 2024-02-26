@@ -28,18 +28,20 @@ abstract class Algorithm {
 	/**
 	 * Hashes the given password.
 	 *
-	 * @param $password string the clear-text password to hash
+	 * @param string $password string the plain text password to hash
+	 * 
 	 * @return string the resulting hash
 	 */
-	protected abstract function hash($password);
+	protected abstract function hash(string $password);
 
 	/**
 	 * Checks whether the given password matches the hash.
 	 *
-	 * @param $password string the clear-text password
-	 * @param $hash string the password hash
+	 * @param string $password string the plain text password
+	 * @param string $hash string the password hash
+	 * 
 	 * @return boolean true if the password matches, false otherwise
 	 */
-	protected abstract function isValidPassword($password, $hash);
+	protected abstract function verify(string $password, string $hash);
 
 }

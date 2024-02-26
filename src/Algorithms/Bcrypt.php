@@ -23,6 +23,8 @@
  */
 class Bcrypt extends Algorithm {
 
+	public static $INSTANCE = new Bcrypt();
+
 	/**
 	 * Default salt prefix
 	 * 
@@ -56,16 +58,16 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @return string
 	 */
-	public function hash($string, $cost = null) {
+	public function hash(string $string, $cost = null) {
 		if (empty($cost)) {
 			$cost = self::$_defaultCost;
 		}
  
 		// Salt
-		$salt = $this->generateRandomSalt();
+		$salt = $this->generate_random_salt();
  
 		// Hash string
-		$hashString = $this->__generateHashString((int)$cost, $salt);
+		$hashString = $this->__generate_hash_string((int)$cost, $salt);
  
 		return crypt($string, $hashString);
 	}
@@ -78,7 +80,7 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @return boolean
 	 */
-	public function isValidPassword($password, $hash) {
+	public function verify(string $password, string $hash) {
 		return (crypt($password, $hash) === $hash);
 	}
 
@@ -87,7 +89,7 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @return string
 	 */
-	private function generateRandomSalt() {
+	private function generate_random_salt() {
 		// Salt seed
 		$seed = uniqid(mt_rand(), true);
  
@@ -106,7 +108,7 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @return string
 	 */
-	private function __generateHashString($cost, $salt) {
+	private function __generate_hash_string($cost, $salt) {
 		return sprintf('$%s$%02d$%s$', self::$_saltPrefix, $cost, $salt);
 	}
 
