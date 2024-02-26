@@ -1,7 +1,7 @@
 # nLogin-Web
-Integrate nLogin with your website, forum and/or store
+Integrate nLogin with your website, forum and/or store.
 
-## How to use?
+## Usage:
 1. [Instantiating the nLogin class](#instantiation)
 2. [Verifying the Password](#verifying-the-password)
 3. [Registering a Player](#registering-a-player)
@@ -61,7 +61,7 @@ $user_id = $nlogin->fetch_user_id("Player", nLogin::$FETCH_WITH_LAST_NAME);
 $success = $nlogin->change_password($user_id, "newpassword123");
 ```
 
-### <div id="license">License</div>
+## <div id="license">License</div>
 This code or part of it was taken from the AuthMe project, licensed under the GNU General Public License v3.0 (https://github.com/AuthMe/AuthMeReloaded/blob/master/LICENSE)<br>
 <br>
 For more details, access the original source code: <br>
