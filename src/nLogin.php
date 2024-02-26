@@ -335,33 +335,6 @@ class nLogin
 	}
 
 	/**
-	 * Retrieves the user identifier for the player.
-	 * 
-	 * @param string $column the column name
-	 * @param string $value the column value
-	 * 
-	 * @return int|null the user identifier, or null if unavailable (e.g. targeted user doesn't exist)
-	 */
-	private function __fetch_user_id(string $clauses, string $value) {
-		$mysqli = $this->get_mysqli();
-		if ($mysqli == null) {
-			return null;
-		}
-
-		$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE ' . $column . ' = ?');
-		
-		$stmt->bind_param('s', $value);
-		$stmt->execute();
-		$stmt->bind_result($user_id);
-
-		if (!$stmt->fetch()) {
-			return null;
-		}
-
-		return $user_id;
-	}
-
-	/**
 	 * Returns a connection to the database.
 	 *
 	 * @return mysqli|null the mysqli object or null upon error
