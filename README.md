@@ -1,5 +1,8 @@
-# nLogin-Web
-Integrate nLogin with your website, forum and/or store.
+<div id="nlogin-logo" align="center">
+    <br />
+    <img src="https://www.nickuc.com/static/assets/img/nlogin.svg" alt="nLogin Logo" width="500"/>
+    <h3>Integrate nLogin with your website, forum and/or store.</h3>
+</div>
 
 ## Usage:
 1. [Instantiating the nLogin class](#instantiation)
