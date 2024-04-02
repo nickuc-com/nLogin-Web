@@ -25,12 +25,10 @@
 
 class AuthMe extends Algorithm {
 
-	public static $INSTANCE = new AuthMe();
-
 	/**
 	 * salt length
 	 */
-	protected static $SALT_LENGTH = 16;
+	protected $SALT_LENGTH = 16;
 
 	/**
 	 * @var string[] range of characters for salt generation

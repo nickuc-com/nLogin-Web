@@ -23,8 +23,6 @@
  */
 class Bcrypt extends Algorithm {
 
-	public static $INSTANCE = new Bcrypt();
-
 	/**
 	 * Default salt prefix
 	 * 
@@ -32,21 +30,21 @@ class Bcrypt extends Algorithm {
 	 * 
 	 * @var string
 	 */
-	protected static $_saltPrefix = '2a';
+	protected $_saltPrefix = '2a';
 	 
 	/**
 	 * Default hashing cost (4-31)
 	 * 
 	 * @var integer
 	 */
-	protected static $_defaultCost = 14;
+	protected $_defaultCost = 14;
  
 	/**
 	 * Salt limit length
 	 * 
 	 * @var integer
 	 */
-	protected static $_saltLength = 22;
+	protected $_saltLength = 22;
 
 	/**
 	 * Hash a string

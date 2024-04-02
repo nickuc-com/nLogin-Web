@@ -32,13 +32,17 @@ require 'Algorithms/Sha512.php';
 class nLogin
 {
 
-	public static int $FETCH_WITH_MOJANG_ID = 1;
-	public static int $FETCH_WITH_BEDROCK_ID = 2;
-	public static int $FETCH_WITH_LAST_NAME = 3;
+	const FETCH_WITH_MOJANG_ID = 1;
+	const FETCH_WITH_BEDROCK_ID = 2;
+	const FETCH_WITH_LAST_NAME = 3;
 	
-	public static string $TABLE_NAME = 'nlogin';
-	public static $HASHING_ALGORITHM = Bcrypt::$INSTANCE;
+	private Algorithm $authme;
+	private Algorithm $bcrypt;
+	private Algorithm $sha256;
+	private Algorithm $sha512;
+	private Algorithm $hashing_algorithm;
 
+	private string $table_name;
 	private string $mysql_host, $mysql_user, $mysql_pass, $mysql_database;
 	private bool $using_username_appender;
 
@@ -50,14 +54,28 @@ class nLogin
 	 * @param string $mysql_pass MySQL Password
 	 * @param string $mysql_database MySQL Database Name 
 	 * @param bool $using_username_appender Set this true if the "username-appender" option is enabled in nLogin's config.yml
+	 * @param string $table_name Sets the table name. Default value: "nlogin"
 	 */
-	public function __construct(string $mysql_host, string $mysql_user, string $mysql_pass, string $mysql_database, bool $using_username_appender)
+	public function __construct(string $mysql_host, string $mysql_user, string $mysql_pass, string $mysql_database, bool $using_username_appender, string $table_name = 'nlogin')
 	{
-		$this-$mysql_host = $mysql_host;
+		$this->init_algorithm();
+		$this->$mysql_host = $mysql_host;
 		$this->mysql_user = $mysql_user;
 		$this->mysql_pass = $mysql_pass;
 		$this->mysql_database = $mysql_database;
 		$this->using_username_appender = $using_username_appender;
+		$this->table_name = $table_name;
+	}
+
+	/**
+	 * Initializes algorithm instances
+	 */
+	private function init_algorithm() {
+		$this->authme = new AuthMe();
+		$this->bcrypt = new Bcrypt();
+		$this->sha256 = new Sha256();
+		$this->sha512 = new Sha512();
+		$this->hashing_algorithm = $this->bcrypt;
 	}
 
 	/**
@@ -70,7 +88,7 @@ class nLogin
 	/**
 	 * Retrieves the user identifier for the player.
 	 * 
-	 * @param string $search the value used to search, it can be a username (nLogin::$FETCH_WITH_LAST_NAME), a mojang id (nLogin::$FETCH_WITH_MOJANG_ID) or a bedrock id (nLogin::$FETCH_WITH_BEDROCK_ID)
+	 * @param string $search the value used to search, it can be a username (nLogin::FETCH_WITH_LAST_NAME), a mojang id (nLogin::FETCH_WITH_MOJANG_ID) or a bedrock id (nLogin::FETCH_WITH_BEDROCK_ID)
 	 * @param string $mode the mode used to search
 	 * 
 	 * @return int|null the user identifier, -1 if not found, or null if failed
@@ -84,29 +102,29 @@ class nLogin
 		$search = trim($search);
 
 		switch ($mode) {
-			case self::$FETCH_WITH_MOJANG_ID:
-				$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE mojang_id = ? LIMIT 1');
+			case self::FETCH_WITH_MOJANG_ID:
+				$stmt = $mysqli->prepare('SELECT ai FROM ' . $this->table_name . ' WHERE mojang_id = ? LIMIT 1');
 				$stmt->bind_param('s', $search);
 				break;
 
-			case self::$FETCH_WITH_BEDROCK_ID:
-				$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE bedrock_id = ? LIMIT 1');
+			case self::FETCH_WITH_BEDROCK_ID:
+				$stmt = $mysqli->prepare('SELECT ai FROM ' . $this->table_name . ' WHERE bedrock_id = ? LIMIT 1');
 				$stmt->bind_param('s', $search);
 				break;
 
-			case self::$FETCH_WITH_LAST_NAME:
+			case self::FETCH_WITH_LAST_NAME:
 				if ($this->using_username_appender) {
-					$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE last_name = ? AND mojang_id IS NULL AND bedrock_id IS NULL LIMIT 1');
+					$stmt = $mysqli->prepare('SELECT ai FROM ' . $this->table_name . ' WHERE last_name = ? AND mojang_id IS NULL AND bedrock_id IS NULL LIMIT 1');
 					$stmt->bind_param('s', $search);
 				}
 				else {
-					$stmt = $mysqli->prepare('SELECT ai FROM ' . self::$TABLE_NAME . ' WHERE last_name = ? ORDER BY mojang_id DESC LIMIT 1');
+					$stmt = $mysqli->prepare('SELECT ai FROM ' . $this->table_name . ' WHERE last_name = ? ORDER BY mojang_id DESC LIMIT 1');
 					$stmt->bind_param('s', $search);
 				}
 				break;
 			
 			default:
-				throw new \Exception('Invalid search mode (' . $mode . '), valid values: nLogin::$FETCH_WITH_MOJANG_ID, nLogin::$FETCH_WITH_BEDROCK_ID or nLogin::$FETCH_WITH_LAST_NAME');
+				throw new \Exception('Invalid search mode (' . $mode . '), valid values: nLogin::FETCH_WITH_MOJANG_ID, nLogin::FETCH_WITH_BEDROCK_ID or nLogin::FETCH_WITH_LAST_NAME');
 		}
 
 		$stmt->execute();
@@ -177,8 +195,8 @@ class nLogin
 			return false;
 		}
 
-		$hash = self::$HASHING_ALGORITHM->hash($password);
-		$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET password = ? WHERE ai = ? LIMIT 1');
+		$hash = $this->$hashing_algorithm->hash($password);
+		$stmt = $mysqli->prepare('UPDATE ' . $this->table_name . ' SET password = ? WHERE ai = ? LIMIT 1');
 		$stmt->bind_param('si', $hash, $user_id);
 		
 		return $stmt->execute();
@@ -214,15 +232,15 @@ class nLogin
 
 		if ($mojang_id != null) {
 			$search = $mojang_id;
-			$mode = self::$FETCH_WITH_MOJANG_ID;
+			$mode = self::FETCH_WITH_MOJANG_ID;
 		}
 		else if ($bedrock_id != null) {
 			$search = $bedrock_id;
-			$mode = self::$FETCH_WITH_BEDROCK_ID;
+			$mode = self::FETCH_WITH_BEDROCK_ID;
 		} 
 		else {
 			$search = $username;
-			$mode = self::$FETCH_WITH_LAST_NAME;
+			$mode = self::FETCH_WITH_LAST_NAME;
 		}
 
 		$user_id = $this->fetch_user_id($search, $mode);
@@ -231,25 +249,25 @@ class nLogin
 		}
 
 		$email = $email ?? '';
-		$hashed_password = self::$HASHING_ALGORITHM->hash($password);
+		$hashed_password = $this->$hashing_algorithm->hash($password);
 
 		if ($user_id < 0) {
-			$stmt = $mysqli->prepare('INSERT INTO ' . self::$TABLE_NAME . ' (last_name, password, last_ip, mojang_id, bedrock_id, email) '
+			$stmt = $mysqli->prepare('INSERT INTO ' . $this->table_name . ' (last_name, password, last_ip, mojang_id, bedrock_id, email) '
 				. 'VALUES (?, ?, ?, ?) ');
 			$stmt->bind_param('ssss', $username, $hashed_password, $ip, $mojang_id, $bedrock_id, $email);
 		} 
 		else if ($mojang_id != null) {
-			$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET ' 
+			$stmt = $mysqli->prepare('UPDATE ' . $this->table_name . ' SET ' 
 				. 'password = ?, last_ip = ?, mojang_id = ?, email = ? WHERE ai = ? LIMIT 1');
 			$stmt->bind_param('ssssi', $hashed_password, $ip, $mojang_id, $email, $user_id);
 		} 
 		else if ($bedrock_id != null) {
-			$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET ' 
+			$stmt = $mysqli->prepare('UPDATE ' . $this->table_name . ' SET ' 
 				. 'password = ?, last_ip = ?, bedrock_id = ?, email = ? WHERE ai = ? LIMIT 1');
 			$stmt->bind_param('ssssi', $hashed_password, $ip, $bedrock_id, $email, $user_id);
 		} 
 		else {
-			$stmt = $mysqli->prepare('UPDATE ' . self::$TABLE_NAME . ' SET ' 
+			$stmt = $mysqli->prepare('UPDATE ' . $this->table_name . ' SET ' 
 				. 'password = ?, last_ip = ?, email = ? WHERE ai = ? LIMIT 1');
 			$stmt->bind_param('sssi', $hashed_password, $ip, $email, $user_id);
 		}
@@ -270,7 +288,7 @@ class nLogin
 			return null;
 		}
 
-		$stmt = $mysqli->prepare('SELECT password FROM ' . self::$TABLE_NAME . ' WHERE ai = ? LIMIT 1');
+		$stmt = $mysqli->prepare('SELECT password FROM ' . $this->table_name . ' WHERE ai = ? LIMIT 1');
 		
 		$stmt->bind_param('i', $user_id);
 		$stmt->execute();
@@ -296,16 +314,16 @@ class nLogin
 		switch ($algo) {
 		 	case '2':
 		 	case '2A':
-		 		return Bcrypt::$INSTANCE;
+		 		return $this->bcrypt;
 			
 			case "SHA256":
-			   return Sha256::$INSTANCE;
+				return $this->sha256;
 			   
 			case "SHA512":
-			   return Sha512::$INSTANCE;
+				return $this->sha512;
 
 			case "SHA":
-				return AuthMe::$INSTANCE;
+				return $this->authme;
 
 			default:
 		 		return null;
@@ -326,7 +344,7 @@ class nLogin
 			return true;
 		}
 
-		$stmt = $mysqli->prepare('SELECT 1 FROM ' . self::$TABLE_NAME . ' WHERE ' . $column . ' = ? LIMIT 1');
+		$stmt = $mysqli->prepare('SELECT 1 FROM ' . $this->table_name . ' WHERE ' . $column . ' = ? LIMIT 1');
 	
 		$stmt->bind_param('s', $value);
 		$stmt->execute();

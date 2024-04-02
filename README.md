@@ -28,7 +28,7 @@ require 'nLogin.php';
 $nlogin = new nLogin("localhost", "root", "", "nlogin", false);
 
 // Fetches the user identifier (search, mode)
-$user_id = $nlogin->fetch_user_id("Player", nLogin::$FETCH_WITH_LAST_NAME);
+$user_id = $nlogin->fetch_user_id("Player", nLogin::FETCH_WITH_LAST_NAME);
 
 // Verifies the password
 $is_valid = $nlogin->verify_password($user_id, "password123");
@@ -43,7 +43,7 @@ require 'nLogin.php';
 $nlogin = new nLogin("localhost", "root", "", "nlogin", false);
 
 // Fetches the user identifier (search, mode)
-$user_id = $nlogin->fetch_user_id("Player", nLogin::$FETCH_WITH_LAST_NAME);
+$user_id = $nlogin->fetch_user_id("Player", nLogin::FETCH_WITH_LAST_NAME);
 
 // Registers a player (username, plain password, e-mail, mojang id (optional), bedrock id (optional))
 $success = $nlogin->register($user_id, "password123", 'youremail@domain.com', null, null);
@@ -58,7 +58,7 @@ require 'nLogin.php';
 $nlogin = new nLogin("localhost", "root", "", "nlogin", false);
 
 // Fetches the user identifier (search, mode)
-$user_id = $nlogin->fetch_user_id("Player", nLogin::$FETCH_WITH_LAST_NAME);
+$user_id = $nlogin->fetch_user_id("Player", nLogin::FETCH_WITH_LAST_NAME);
 
 // Changes the password (user identifier, new plain password)
 $success = $nlogin->change_password($user_id, "newpassword123");

@@ -25,12 +25,10 @@
 
 class Sha512 extends Algorithm {
 
-	public static $INSTANCE = new Sha512();
-
 	/**
 	 * salt length
 	 */
-	protected static $SALT_LENGTH = 24;
+	protected $SALT_LENGTH = 24;
 
 	private $CHARS; 
 
