@@ -59,7 +59,7 @@ class nLogin
 	public function __construct(string $mysql_host, string $mysql_user, string $mysql_pass, string $mysql_database, bool $using_username_appender, string $table_name = 'nlogin')
 	{
 		$this->init_algorithm();
-		$this->$mysql_host = $mysql_host;
+		$this->mysql_host = $mysql_host;
 		$this->mysql_user = $mysql_user;
 		$this->mysql_pass = $mysql_pass;
 		$this->mysql_database = $mysql_database;
@@ -195,7 +195,7 @@ class nLogin
 			return false;
 		}
 
-		$hash = $this->$hashing_algorithm->hash($password);
+		$hash = $this->hashing_algorithm->hash($password);
 		$stmt = $mysqli->prepare('UPDATE ' . $this->table_name . ' SET password = ? WHERE ai = ? LIMIT 1');
 		$stmt->bind_param('si', $hash, $user_id);
 		
@@ -249,7 +249,7 @@ class nLogin
 		}
 
 		$email = $email ?? '';
-		$hashed_password = $this->$hashing_algorithm->hash($password);
+		$hashed_password = $this->hashing_algorithm->hash($password);
 
 		if ($user_id < 0) {
 			$stmt = $mysqli->prepare('INSERT INTO ' . $this->table_name . ' (last_name, password, last_ip, mojang_id, bedrock_id, email) '
