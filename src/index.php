@@ -73,7 +73,7 @@ function get_from_post_or_empty($index_name) {
 
 // Login logic
 function process_login($user, $pass, nLogin $nlogin) {
-  $user_id = $nlogin->fetch_user_id($user, nLogin::$FETCH_WITH_LAST_NAME);
+  $user_id = $nlogin->fetch_user_id($user, nLogin::FETCH_WITH_LAST_NAME);
   if ($user_id == null) {
     echo '<h1>Error</h1>Unfortunately, there was an error while fetching the user id.';
   } else if ($nlogin->verify_password($user_id, $pass)) {
@@ -89,7 +89,7 @@ function process_login($user, $pass, nLogin $nlogin) {
 
 // Register logic
 function process_register($user, $pass, $email, nLogin $nlogin) {
-  $user_id = $this->fetch_user_id($user, nLogin::$FETCH_WITH_LAST_NAME);
+  $user_id = $nlogin->fetch_user_id($user, nLogin::FETCH_WITH_LAST_NAME);
   if ($user_id == null) {
     echo '<h1>Error</h1>Unfortunately, there was an error while fetching the user id.';
   } else if ($user_id != -1) {

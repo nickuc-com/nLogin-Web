@@ -358,7 +358,7 @@ class nLogin
 	 * @return mysqli|null the mysqli object or null upon error
 	 */
 	private function get_mysqli() {
-		$mysqli = new mysqli($this-mysql, $this->mysql_user, $this->mysql_pass, $this->mysql_database);
+		$mysqli = new mysqli($this->mysql_host, $this->mysql_user, $this->mysql_pass, $this->mysql_database);
 		if (mysqli_connect_error()) {
 			printf('Could not connect to ' . $this->mysql_database . ' database. Errno: %d, error: "%s"',
 				mysqli_connect_errno(), mysqli_connect_error());
