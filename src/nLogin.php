@@ -267,8 +267,8 @@ class nLogin
 
 		if ($user_id < 0) {
 			$stmt = $mysqli->prepare('INSERT INTO ' . $this->table_name . ' (last_name, password, last_ip, unique_id, mojang_id, bedrock_id, email) '
-				. 'VALUES (?, ?, ?, ?) ');
-			$stmt->bind_param('ssss', $username, $hashed_password, $ip, $unique_id, $mojang_id, $bedrock_id, $email);
+				. 'VALUES (?, ?, ?, ?, ?, ?, ?) ');
+			$stmt->bind_param('sssssss', $username, $hashed_password, $ip, $unique_id, $mojang_id, $bedrock_id, $email);
 		} 
 		else if ($mojang_id != null) {
 			$stmt = $mysqli->prepare('UPDATE ' . $this->table_name . ' SET ' 
