@@ -45,8 +45,8 @@ $nlogin = new nLogin("localhost", "root", "", "nlogin", false);
 // Fetches the user identifier (search, mode)
 $user_id = $nlogin->fetch_user_id("Player", nLogin::FETCH_WITH_LAST_NAME);
 
-// Registers a player (username, plain password, e-mail, mojang id (optional), bedrock id (optional))
-$success = $nlogin->register($user_id, "password123", 'youremail@domain.com', null, null);
+// Registers a player (username, plain password, e-mail, unique id (optional), mojang id (optional), bedrock id (optional))
+$success = $nlogin->register($user_id, "password123", 'youremail@domain.com', null, null, null);
 ```
 
 ### <div id="changing-the-password">Changing the Password</div>

@@ -209,12 +209,13 @@ class nLogin
 	 * @param string $password the password to associate to the user
 	 * @param string $email the email (may be empty)
 	 * @param string $ip the ip (optional)
+	 * @param string $unique_id the unique id to register (optional)
 	 * @param string $mojang_id the mojang id (optional). It should be null if $bedrock_id is not null
 	 * @param string $bedrock_id the bedrock id (optional). It should be null if $mojang_id is not null 
 	 * 
 	 * @return bool whether or not the registration was successful
 	 */
-	public function register(string $username, string $password, string $email, string $ip = null, string $mojang_id = null, string $bedrock_id = null) {
+	public function register(string $username, string $password, string $email, string $ip = null, string $unique_id = null, string $mojang_id = null, string $bedrock_id = null) {
 		if ($ip == null) {
 			$ip = $_SERVER['REMOTE_ADDR'];
 		}
@@ -233,14 +234,27 @@ class nLogin
 		if ($mojang_id != null) {
 			$search = $mojang_id;
 			$mode = self::FETCH_WITH_MOJANG_ID;
+			if ($unique_id == null) {
+				$unique_id = $mojang_id;
+			}
 		}
 		else if ($bedrock_id != null) {
 			$search = $bedrock_id;
 			$mode = self::FETCH_WITH_BEDROCK_ID;
+			if ($unique_id == null) {
+				$unique_id = $bedrock_id;
+			}
 		} 
 		else {
 			$search = $username;
 			$mode = self::FETCH_WITH_LAST_NAME;
+			if ($unique_id == null) {
+				$unique_id = $this->__create_offline_id($username);
+			}
+		}
+
+		if ($unique_id == null || strlen($unique_id) !== 32) {
+			throw new \Exception('Invalid $unique_id provided! ' . $unique_id);
 		}
 
 		$user_id = $this->fetch_user_id($search, $mode);
@@ -252,9 +266,9 @@ class nLogin
 		$hashed_password = $this->hashing_algorithm->hash($password);
 
 		if ($user_id < 0) {
-			$stmt = $mysqli->prepare('INSERT INTO ' . $this->table_name . ' (last_name, password, last_ip, mojang_id, bedrock_id, email) '
+			$stmt = $mysqli->prepare('INSERT INTO ' . $this->table_name . ' (last_name, password, last_ip, unique_id, mojang_id, bedrock_id, email) '
 				. 'VALUES (?, ?, ?, ?) ');
-			$stmt->bind_param('ssss', $username, $hashed_password, $ip, $mojang_id, $bedrock_id, $email);
+			$stmt->bind_param('ssss', $username, $hashed_password, $ip, $unique_id, $mojang_id, $bedrock_id, $email);
 		} 
 		else if ($mojang_id != null) {
 			$stmt = $mysqli->prepare('UPDATE ' . $this->table_name . ' SET ' 
@@ -350,6 +364,20 @@ class nLogin
 		$stmt->execute();
 
 		return $stmt->fetch();
+	}
+
+	/**
+	 * Returns an offline UUID derived from the nickname.
+	 *
+	 * @param string $username the username to be used in generation
+	 *
+	 * @return string the UUID in undash format
+	 */
+	private function __create_offline_id(string $username) {
+		$data = hex2bin(md5("OfflinePlayer:" . $username));
+		$data[6] = chr(ord($data[6]) & 0x0f | 0x30);
+		$data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+		return bin2hex($data);
 	}
 
 	/**
