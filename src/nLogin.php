@@ -344,7 +344,7 @@ class nLogin
 
 			case "ARGON2I":
 			case "ARGON2ID":
-			case "ARGON2":
+			case "ARGON2D":
 				return $this->argon2;
 
 			default:
