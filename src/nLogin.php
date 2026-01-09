@@ -28,6 +28,7 @@ require 'Algorithms/AuthMe.php';
 require 'Algorithms/Bcrypt.php';
 require 'Algorithms/Sha256.php';
 require 'Algorithms/Sha512.php';
+require 'Algorithms/Argon2.php';
 
 class nLogin
 {
@@ -40,6 +41,7 @@ class nLogin
 	private Algorithm $bcrypt;
 	private Algorithm $sha256;
 	private Algorithm $sha512;
+	private Algorithm $argon2;
 	private Algorithm $hashing_algorithm;
 
 	private string $table_name;
@@ -75,6 +77,7 @@ class nLogin
 		$this->bcrypt = new Bcrypt();
 		$this->sha256 = new Sha256();
 		$this->sha512 = new Sha512();
+		$this->argon2 = new Argon2();
 		$this->hashing_algorithm = $this->bcrypt;
 	}
 
@@ -338,6 +341,11 @@ class nLogin
 
 			case "SHA":
 				return $this->authme;
+
+			case "ARGON2I":
+			case "ARGON2ID":
+			case "ARGON2D":
+				return $this->argon2;
 
 			default:
 		 		return null;
